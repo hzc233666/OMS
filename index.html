@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>订单管理系统</title>
+  <style>
+    :root{--bg:#f4f6fa;--card:#fff;--line:#e5e9f2;--text:#1f2d3d;--muted:#6b7a90;--p:#1677ff;--p2:#e8f3ff;--d:#d4380d;--d2:#fff2f0;--s:#f2f4f8}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif}
+    .hidden{display:none!important}
+    .auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .auth-card{width:min(440px,100%);background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+    .auth-card h2{margin:0 0 14px;font-size:22px}
+    .field{margin-bottom:12px}.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+    input,select,button{width:100%;min-height:36px;border:1px solid #cfd6e3;border-radius:8px;padding:0 10px;background:#fff;font-size:14px}
+    button{cursor:pointer;font-weight:600}
+    .row{display:flex;gap:8px}.btn-p{background:var(--p);border-color:var(--p);color:#fff}.btn-s{background:var(--s)}.btn-d{background:var(--d2);border-color:#ffccc7;color:var(--d)}
+    .msg{margin-top:8px;font-size:13px;color:var(--muted);white-space:pre-line}
+    .layout{min-height:100vh;display:grid;grid-template-columns:220px 1fr}
+    aside{background:#0f172a;color:#d7e0ee;padding:18px 12px}
+    .brand{font-weight:700;color:#fff;margin:0 8px 16px}
+    .menu{width:100%;text-align:left;background:transparent;color:#d7e0ee;border:1px solid transparent;border-radius:8px;min-height:40px;padding:0 10px;margin-bottom:8px}
+    .menu.active{background:#1e293b;border-color:#334155;color:#fff}
+    main{padding:18px 20px}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .top h1{margin:0;font-size:22px}.muted{color:var(--muted)}
+    .card{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+    .hd{padding:12px 14px;border-bottom:1px solid var(--line);background:#fafbff;display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .bd{padding:14px}
+    .btn-mini{width:auto;min-height:30px;padding:0 8px;font-size:12px}
+    .order-items-table{table-layout:fixed;width:100%;min-width:0}
+    .order-items-table th,.order-items-table td{text-align:center!important;vertical-align:middle}
+    .order-items-table .col-name{width:22%}
+    .order-items-table .col-spec{width:22%}
+    .order-items-table .col-qty{width:14%}
+    .order-items-table .col-price{width:18%}
+    .order-items-table .col-total{width:14%}
+    .order-items-table .col-op{width:10%}
+    .order-items-table .i-total{white-space:nowrap}
+    .order-items-table .i-total .ellipsis{display:inline-block;max-width:10ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .order-items-table input{text-align:center}
+    .wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:840px}
+    th,td{border-bottom:1px solid var(--line);padding:10px 8px;font-size:13px;white-space:nowrap;text-align:left}
+    th{background:#f8faff;color:#384861}
+    tr:hover td{background:#f8fbff}
+    .center{text-align:center}.right{text-align:right}
+    .tag{display:inline-flex;border-radius:999px;padding:2px 10px;font-size:12px}
+    .t-pending{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+    .t-shipped{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+    .t-done{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+    .progress{display:flex;align-items:center;gap:8px}
+    .bar{height:8px;background:#ecf0f7;border-radius:999px;overflow:hidden;min-width:100px}
+    .bar span{display:block;height:100%;background:var(--p)}
+    .detail{display:grid;grid-template-columns:1fr 220px;gap:14px}
+    .inline-detail-row td{background:#fff!important;padding:0;border-bottom:1px solid var(--line)}
+    .inline-detail-box{
+      margin:12px;
+      padding:16px;
+      border:1px solid #dbe3ef;
+      border-radius:12px;
+      background:#f8f9fa;
+    }
+    .inline-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .inline-section{
+      border:1px solid #e1e8f2;
+      border-radius:10px;
+      background:#fff;
+      padding:12px;
+      margin-top:12px;
+    }
+    .inline-section h4{margin:0 0 10px;font-size:14px}
+    .inline-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .edit-input {
+      width: 100%;
+      min-width: 80px;
+      padding: 4px 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+    }
+    .edit-textarea {
+      width: 100%;
+      min-width: 120px;
+      padding: 4px 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+      resize: vertical;
+    }
+    .sticky{position:sticky;top:18px;display:flex;flex-direction:column;gap:8px}
+    .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .sum .cell{border:1px solid var(--line);background:#f9fbff;border-radius:8px;padding:10px}
+    .sum .k{font-size:12px;color:var(--muted)}.sum .v{font-size:18px;font-weight:700;margin-top:4px}
+    .timeline{border-left:2px solid #d7e3f7;margin-left:10px;padding-left:12px;margin-bottom:12px;position:relative}
+    .timeline:before{content:"";position:absolute;left:-7px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--p)}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.45);padding:14px;z-index:99}
+    .modal.show{display:flex}.box{width:min(920px,100%);max-height:92vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px}
+    .mhd{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;background:#fafbff}
+    .mbd{padding:14px}.mft{padding:12px 14px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+    .m-card{background:#fff;border:1px solid #e8edf5;border-radius:16px;box-shadow:none}
+    #customerModal input,#customerModal textarea,#customerModal select{border:1px solid #d5dbe7;border-radius:8px;min-height:44px;padding:0 12px}
+    #customerModal textarea{padding:10px 12px}
+    #customerModal button{min-height:44px}
+    @media (max-width:980px){.layout{grid-template-columns:1fr}aside{display:flex;gap:8px;padding:10px}.brand{margin:0}.menu{width:auto;min-height:34px;margin:0}.detail{grid-template-columns:1fr}.sticky{position:static;flex-direction:row;flex-wrap:wrap}.sum{grid-template-columns:1fr}.inline-detail-grid{grid-template-columns:1fr}}
+    @media (max-width:768px){
+      html,body{height:100%}
+      body.mobile-mode{overflow:hidden;background:#f5f7fb}
+      .mobile-container{position:fixed;inset:0;background:#f5f7fb}
+      .mobile-header{position:fixed;left:0;right:0;top:0;height:56px;min-height:56px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;background:rgba(255,255,255,.95);border-bottom:1px solid #e8edf5;backdrop-filter:blur(8px);z-index:20;padding-top:constant(safe-area-inset-top);padding-top:env(safe-area-inset-top)}
+      .mobile-header .mobile-header-inner{width:100%;padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .mobile-header .mobile-header-title{min-width:0;flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .mobile-header .mobile-header-user{max-width:42vw;font-size:12px;color:#6b7a90;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #mobileContent{position:fixed;left:0;right:0;top:56px;bottom:78px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px}
+      .mobile-bottom-wrap{position:fixed;left:0;right:0;bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:transparent;z-index:20}
+      .mobile-bottom-nav{background:rgba(255,255,255,.92);border:1px solid #e8edf5;border-radius:18px;padding:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;backdrop-filter:blur(10px);padding-bottom:constant(safe-area-inset-bottom);padding-bottom:env(safe-area-inset-bottom)}
+      .mobile-tab-btn{height:52px;border:none;border-radius:12px;background:transparent;color:#6b7a90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px}
+      .mobile-tab-btn.active{background:#e8f0fe;color:#1677ff;font-weight:600}
+      .mobile-card{background:#fff;border:1px solid #e8edf5;border-radius:16px;box-shadow:none}
+      .mobile-search{height:44px;width:100%;border:1px solid #e2e6ed;border-radius:12px;padding:0 12px;font-size:16px;background:#fff}
+      .mobile-list{display:grid;gap:8px;margin-top:10px}
+      .customer-card{padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+      .customer-main{min-width:0;flex:1}
+      .customer-name{font-weight:700;font-size:15px;color:#1f2d3d}
+      .customer-line{margin-top:4px;font-size:12px;color:#6b7a90}
+      .customer-actions{display:flex;gap:6px}
+      .customer-action-btn{height:32px;padding:0 10px;border-radius:10px;border:1px solid #dbe2ed;background:#fff;font-size:12px}
+      .customer-action-btn.delete{border-color:#ffd6d6;background:#fff5f5;color:#d4380d}
+      aside{display:none!important}
+      main{padding:10px}
+      .top{margin-bottom:10px;gap:8px;align-items:flex-start}
+      .top h1{font-size:22px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+      .top .row{min-width:0;display:flex;align-items:center;justify-content:flex-end}
+      #u{display:inline-block;max-width:44vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+      /* mobile-order（新建订单） */
+      .mobile-order-section-title{font-weight:700;font-size:15px;margin:2px 0 6px}
+      .mobile-order-form{display:grid;gap:10px}
+      .mobile-order-card{padding:12px}
+      .mobile-order-label{font-size:12px;color:#6b7a90;margin:2px 0 6px}
+      .mobile-order-input{height:44px;border:1px solid #e2e6ed;border-radius:12px;padding:0 12px;font-size:16px;background:#fff}
+      .mobile-order-money{font-weight:800;color:#d4380d}
+      .mobile-order-subtotal{font-weight:700;color:#1677ff}
+      .mobile-order-dash-btn{height:44px;border:2px dashed #cfd6e3;border-radius:14px;background:#fff;color:#1677ff;font-weight:700}
+      .mobile-order-danger-btn{height:36px;min-height:36px;width:auto;padding:0 10px;border-radius:10px;border:1px solid #ffd6d6;background:#fff5f5;color:#d4380d}
+      .mobile-order-submit-btn{height:48px;border:none;border-radius:14px;background:#1677ff;color:#fff;font-weight:800;font-size:16px}
+      .mobile-order-items{display:grid;gap:10px}
+      .mobile-order-item{background:#fff;border-radius:16px;padding:12px;border:1px solid #eff0f4}
+      .mobile-order-item-grid{display:flex;flex-direction:column;gap:10px}
+      .mobile-order-two-cols{display:flex;gap:10px}
+      .mobile-order-two-cols > .mobile-order-field{flex:1}
+      .mobile-order-field{display:flex;flex-direction:column;gap:6px}
+      .mobile-order-field label{font-size:12px;color:#6b7a90}
+      .mobile-order-field input{height:44px;border:1px solid #e2e6ed;border-radius:12px;padding:0 12px;font-size:16px;background:#fff}
+      .mobile-order-item-footer{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+      .mobile-order-item-footer .mobile-order-subtotal{font-size:14px}
+
+      /* mobile-ship（发货看板） */
+      .mobile-ship-card{background:#fff;border-radius:16px;border:1px solid #eff0f4;overflow:hidden}
+      .mobile-ship-header{width:100%;border:none;background:#fff;padding:12px 12px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px}
+      .mobile-ship-detail{padding:12px 12px 14px;background:#fff}
+      .mobile-ship-detail-inner{display:flex;flex-direction:column;gap:10px}
+      .mobile-ship-products{display:flex;flex-direction:column;gap:8px}
+      .mobile-ship-item{border:1px solid #eef2f7;border-radius:14px;padding:10px;background:#fff}
+      .mobile-ship-item-title{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+      .mobile-ship-item-title strong{font-size:14px}
+      .mobile-ship-item-meta{font-size:12px;color:#6b7a90;margin-top:4px}
+      .mobile-ship-input{height:44px;border:1px solid #e2e6ed;border-radius:12px;padding:0 12px;font-size:16px;background:#fff;width:100%;box-sizing:border-box}
+      .mobile-ship-info-row{display:flex;gap:10px}
+      .mobile-ship-info-row > *{flex:1}
+      input[type="date"].mobile-ship-input{width:100%;box-sizing:border-box}
+    }
+  </style>
+</head>
+<body>
+  <div id="auth" class="auth">
+    <div class="auth-card">
+      <h2>订单管理系统</h2>
+      <div class="field"><label>邮箱</label><input id="email" type="email" /></div>
+      <div class="field"><label>密码</label><input id="pwd" type="password" /></div>
+      <div class="row"><button id="login" class="btn-p" type="button">登录</button><button id="reg" class="btn-s" type="button">注册</button></div>
+      <div id="msg" class="msg">请先登录后使用系统。</div>
+    </div>
+  </div>
+
+  <div id="app" class="layout hidden">
+    <aside>
+      <div class="brand">ERP 订单系统</div>
+      <button class="menu active" data-v="customers">客户管理</button>
+      <button class="menu" data-v="orders">订单管理</button>
+      <button class="menu" data-v="statement">对账中心</button>
+    </aside>
+    <main>
+      <div class="top">
+        <h1 id="title">客户管理</h1>
+        <div class="row" style="align-items:center"><span id="u" class="muted">未登录</span><button id="logout" class="btn-s btn-mini" type="button">退出</button></div>
+      </div>
+      <div id="ordersView"></div>
+      <div id="customersView" class="hidden"></div>
+      <div id="statementView" class="hidden"></div>
+    </main>
+  </div>
+
+  <div id="orderModal" class="modal"><div class="box">
+    <div class="mhd"><strong id="orderModalTitle">新建订单</strong><button id="closeOrderModal" class="btn-s btn-mini" type="button">关闭</button></div>
+    <form id="orderForm">
+      <div class="mbd">
+        <div class="field"><label>客户</label><select id="orderCustomer"></select></div>
+        <div class="field"><label>合同号</label><input id="orderNo" /></div>
+        <div class="field"><label>产品明细</label><div id="itemsEditor"></div><button id="addItem" class="btn-s btn-mini" type="button" style="margin-top:8px">+ 添加产品</button></div>
+      </div>
+      <div class="mft"><button id="cancelOrder" class="btn-s" type="button">取消</button><button class="btn-p" type="submit">保存订单</button></div>
+    </form>
+  </div></div>
+
+  <div id="customerModal" class="modal"><div class="box" style="width:min(560px,100%)">
+    <div class="mhd"><strong>新建客户</strong><button id="closeCustomerModal" class="btn-s btn-mini" type="button">关闭</button></div>
+    <form id="customerForm"><div class="mbd">
+      <div class="field"><label>客户名称 *</label><input id="customerName" /></div>
+      <div class="field"><label>客户联系人</label><input id="customerContactPerson" /></div>
+      <div class="field"><label>联系电话</label><input id="customerPhone" /></div>
+      <div class="field"><label>电子邮箱</label><input id="customerEmail" type="email" /></div>
+      <div class="field"><label>地址信息</label><input id="customerAddress" /></div>
+      <div class="field"><label>税号/统一社会信用代码</label><input id="customerTaxId" /></div>
+      <div class="field"><label>备注</label><textarea id="customerRemark" rows="2" style="width:100%"></textarea></div>
+    </div><div class="mft"><button id="cancelCustomer" class="btn-s" type="button">取消</button><button class="btn-p" type="submit">保存客户</button></div></form>
+  </div></div>
+
+  <div id="shipModal" class="modal"><div class="box" style="width:min(680px,100%)">
+    <div class="mhd"><strong>新增发货</strong><button id="closeShipModal" class="btn-s btn-mini" type="button">关闭</button></div>
+    <div class="mbd">
+      <div class="row">
+        <div class="field" style="flex:1"><label>发货日期</label><input id="shipDate" type="date" /></div>
+        <div class="field" style="flex:1"><label>送货单号</label><input id="shipNo" /></div>
+      </div>
+      <div id="shipItems"></div>
+      <button id="addShipItem" class="btn-s btn-mini" type="button" style="margin-top:8px">+ 添加下一项</button>
+    </div>
+    <div class="mft"><button id="cancelShip" class="btn-s" type="button">取消</button><button id="saveShip" class="btn-p" type="button">保存发货</button></div>
+  </div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./api.js"></script>
+  <script>
+    const Api = window.ApiService;
+    if (!Api) {
+      alert("系统初始化失败：未加载到 api.js（Supabase 接口层）。请确认已部署 index.html 和 api.js。");
+      throw new Error("ApiService not found");
+    }
+    const st = {
+      view:"customers",
+      orders:[],
+      customers:[],
+      selected:"",
+      editing:"",
+      shipOrder:"",
+      statementMonth:"",
+      statementRows:[],
+      expandedOrders:{},
+      returnState:null,
+      editingCustomerId:null,
+      customerEditFormData:{},
+      appState:{ tab:"orders", page:"orders/create", params:{} },
+      createDraft:{ customerId:"", contractNo:"", items:[{product_name:"",product_spec:"",quantity:"",unit_price:""}] },
+      shipDraft:{ orderId:"", shipped_at:"", shipment_no:"", items:[{product_name:"", quantity_shipped:""}] },
+      customerQuery:""
+    };
+    const $ = id => document.getElementById(id);
+    const E = {
+      auth:$("auth"), app:$("app"), email:$("email"), pwd:$("pwd"), login:$("login"), reg:$("reg"), msg:$("msg"),
+      logout:$("logout"), u:$("u"), title:$("title"), menus:document.querySelectorAll(".menu"),
+      ordersView:$("ordersView"), customersView:$("customersView"), statementView:$("statementView"),
+      orderModal:$("orderModal"), orderModalTitle:$("orderModalTitle"), closeOrderModal:$("closeOrderModal"), cancelOrder:$("cancelOrder"),
+      orderForm:$("orderForm"), orderCustomer:$("orderCustomer"), orderNo:$("orderNo"), itemsEditor:$("itemsEditor"), addItem:$("addItem"),
+      customerModal:$("customerModal"), closeCustomerModal:$("closeCustomerModal"), cancelCustomer:$("cancelCustomer"),
+      customerForm:$("customerForm"), customerName:$("customerName"), customerContactPerson:$("customerContactPerson"), customerPhone:$("customerPhone"), customerEmail:$("customerEmail"), customerAddress:$("customerAddress"), customerTaxId:$("customerTaxId"), customerRemark:$("customerRemark"),
+      shipModal:$("shipModal"), closeShipModal:$("closeShipModal"), cancelShip:$("cancelShip"), shipDate:$("shipDate"), shipNo:$("shipNo"),
+      shipItems:$("shipItems"), addShipItem:$("addShipItem"), saveShip:$("saveShip")
+    };
+    const esc = s => String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    const n = v => Api.safeNumber(v);
+    const fmtQ = v => { const x=n(v).toFixed(2); return x.endsWith(".00")?String(parseInt(x,10)):x; };
+    const fmtM = v => n(v).toFixed(2);
+    const md = v => n(v).toLocaleString("zh-CN",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const month = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; };
+    const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+    const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
+    const tagText = s => s==="done"?"已完成":(s==="shipped"?"进行中":"待发货");
+    const tagCls = s => s==="done"?"t-done":(s==="shipped"?"t-shipped":"t-pending");
+    const ord = id => st.orders.find(o=>o.id===id);
+    const items = id => (ord(id)?.order_items)||[];
+    const ships = id => ([...(ord(id)?.shipments||[])].sort((a,b)=>a.shipped_at<b.shipped_at?1:-1));
+    const shippedMap = id => { const m={}; ships(id).forEach(s=>(s.items||[]).forEach(i=>m[i.product_name]=n(m[i.product_name])+n(i.quantity_shipped))); return m; };
+    const progress = o => { const map=shippedMap(o.id); const t=(o.order_items||[]).reduce((s,i)=>s+n(i.quantity),0); const sh=(o.order_items||[]).reduce((s,i)=>s+Math.min(n(i.quantity),n(map[i.product_name])),0); const p=t>0?Math.max(0,Math.min(100,Math.round(sh/t*100))):0; return {t,sh,p}; };
+    function setMsg(t,e=false){E.msg.textContent=t||"";E.msg.style.color=e?"var(--d)":"var(--muted)";}
+    function toggleAuth(sess){const ok=!!sess?.user;E.auth.classList.toggle("hidden",ok);E.app.classList.toggle("hidden",!ok);E.u.textContent=ok?`已登录：${sess.user.email||sess.user.id}`:"未登录";}
+    function captureReturnState(){st.returnState={view:st.view,selected:st.selected,expandedOrders:{...st.expandedOrders},appState:{...st.appState,params:{...(st.appState?.params||{})}}};}
+    function restoreReturnState(opt={}){if(!st.returnState)return;const rs=st.returnState;st.view=rs.view;st.selected=rs.selected;st.expandedOrders={...rs.expandedOrders};st.appState={...rs.appState,params:{...(rs.appState?.params||{})}};if(opt.keepOrderId){st.selected=opt.keepOrderId;st.expandedOrders[opt.keepOrderId]=true;st.appState={tab:"orders",page:"orders/detail",params:{orderId:opt.keepOrderId}};}st.returnState=null;}
+
+    function renderItemsEditor(list){
+      const rows = (Array.isArray(list)&&list.length?list:[{product_name:"",product_spec:"",quantity:"",unit_price:""}]).map(i=>`
+        <tr><td><input class="i-name" value="${esc(i.product_name||"")}"></td><td><input class="i-spec" value="${esc(i.product_spec||"")}"></td><td><input class="i-qty" type="number" min="0.01" step="0.01" value="${esc(i.quantity||"")}"></td><td><input class="i-price" type="number" min="0" step="0.0001" value="${esc(i.unit_price||"")}"></td><td class="i-total"><span class="ellipsis" title="0.00">0.00</span></td><td class="center"><button class="btn-d btn-mini rm-item" type="button">删除</button></td></tr>
+      `).join("");
+      E.itemsEditor.innerHTML = `<div class="wrap"><table class="order-items-table"><colgroup><col class="col-name"><col class="col-spec"><col class="col-qty"><col class="col-price"><col class="col-total"><col class="col-op"></colgroup><thead><tr><th>产品名称</th><th>规格</th><th>数量</th><th>单价</th><th>总价</th><th>操作</th></tr></thead><tbody id="itb">${rows}</tbody></table></div>`;
+      calcItemTotals();
+    }
+    function calcItemTotals(){E.itemsEditor.querySelectorAll("#itb tr").forEach(tr=>{const q=n(tr.querySelector(".i-qty")?.value),p=n(tr.querySelector(".i-price")?.value);const t=tr.querySelector(".i-total"); if(t){const val=fmtM(q*p);t.innerHTML=`<span class="ellipsis" title="${esc(val)}">${esc(val)}</span>`;}});}
+    function addItemRow(){const tb=E.itemsEditor.querySelector("#itb"); if(!tb) return; tb.insertAdjacentHTML("beforeend",`<tr><td><input class="i-name"></td><td><input class="i-spec"></td><td><input class="i-qty" type="number" min="0.01" step="0.01"></td><td><input class="i-price" type="number" min="0" step="0.0001"></td><td class="i-total"><span class="ellipsis" title="0.00">0.00</span></td><td class="center"><button class="btn-d btn-mini rm-item" type="button">删除</button></td></tr>`);}
+    function collectItems(){return [...E.itemsEditor.querySelectorAll("#itb tr")].map(tr=>({product_name:(tr.querySelector(".i-name")?.value||"").trim(),product_spec:(tr.querySelector(".i-spec")?.value||"").trim(),quantity:n(tr.querySelector(".i-qty")?.value),unit_price:n(tr.querySelector(".i-price")?.value)})).filter(i=>i.product_name&&i.quantity>0);}
+    function renderCustomerOptions(sel=""){E.orderCustomer.innerHTML=`<option value="">请选择客户</option>`+st.customers.map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""}>${esc(c.name)}</option>`).join("");}
+    function openOrderModal(o){captureReturnState();st.editing=o?o.id:"";E.orderModalTitle.textContent=o?"编辑订单":"新建订单";renderCustomerOptions(o?(st.customers.find(c=>c.name===o.customer_name)?.id||""):"");E.orderNo.value=o?o.contract_no:"";renderItemsEditor(o?o.order_items:null);E.orderModal.classList.add("show");}
+    function closeOrderModal(restore=true){E.orderModal.classList.remove("show");st.editing="";E.orderForm.reset();E.itemsEditor.innerHTML="";if(restore){restoreReturnState();render();}}
+    function openCustomerModal(){captureReturnState();E.customerModal.classList.add("show")}
+    function closeCustomerModal(restore=true){E.customerModal.classList.remove("show");E.customerForm.reset();st.editingCustomerId=null;if(restore){restoreReturnState();render();}}
+    function shipRow(orderId,sel=""){const opts=items(orderId).map(i=>{const nm=String(i.product_name||"").trim();return `<option value="${esc(nm)}" ${sel===nm?"selected":""}>${esc(nm)}</option>`}).join("");return `<div class="row js-sr" style="margin-bottom:8px"><select class="s-name"><option value="">请选择产品</option>${opts}</select><input class="s-qty" type="number" min="0.01" step="0.01" placeholder="发货数量"><button class="btn-d btn-mini rm-sr" type="button">删除</button></div>`;}
+    function openShipModal(orderId){captureReturnState();st.shipOrder=orderId;E.shipDate.value=today();E.shipNo.value="";E.shipItems.innerHTML=shipRow(orderId);E.shipModal.classList.add("show");}
+    function closeShipModal(restore=true){E.shipModal.classList.remove("show");st.shipOrder="";if(restore){restoreReturnState();render();}}
+
+    function InlineOrderDetail(o){
+      const s=Api.deriveOrderStatus(o),p=progress(o),map=shippedMap(o.id);
+      const rows=(o.order_items||[]).map(i=>{const q=n(i.quantity),pr=n(i.unit_price),sh=Math.min(q,n(map[i.product_name])),rm=Math.max(0,q-sh);return `<tr><td>${esc(i.product_name)}</td><td class="right">${esc(i.product_spec||"—")}</td><td class="right">${fmtQ(q)}</td><td class="right">${md(pr)}</td><td class="right">${md(q*pr)}</td><td class="right">${fmtQ(sh)}</td><td class="right">${fmtQ(rm)}</td></tr>`}).join("");
+      const tl=ships(o.id).map(s=>`<div class="timeline"><div><strong>${esc(s.shipped_at)}</strong> · 单号 ${esc(s.shipment_no)}</div><div class="muted" style="margin-top:4px">${(s.items||[]).map(i=>`<div>- ${esc(i.product_name)} × ${fmtQ(i.quantity_shipped)}</div>`).join("")||"无明细"}</div></div>`).join("");
+      return `
+        <div class="inline-detail-box">
+          <div class="inline-detail-grid">
+            <div class="cell"><div class="k">客户</div><div class="v" style="font-size:16px">${esc(o.customer_name)}</div></div>
+            <div class="cell"><div class="k">合同号</div><div class="v" style="font-size:16px">${esc(o.contract_no)}</div></div>
+            <div class="cell"><div class="k">状态</div><div class="v" style="font-size:16px"><span class="tag ${tagCls(s)}">${tagText(s)}</span></div></div>
+          </div>
+          <div class="inline-section">
+            <h4>产品明细</h4>
+            <div class="wrap">
+              <table>
+                <thead><tr><th>名称</th><th class="right">规格</th><th class="right">数量</th><th class="right">单价</th><th class="right">总价</th><th class="right">已发货</th><th class="right">未发货</th></tr></thead>
+                <tbody>${rows||`<tr><td colspan="7" class="center muted">暂无产品明细</td></tr>`}</tbody>
+              </table>
+            </div>
+            <div style="margin-top:12px"><div class="progress"><div class="bar" style="flex:1"><span style="width:${p.p}%"></span></div><strong>${p.p}%</strong></div><div class="muted" style="margin-top:4px">进度：${fmtQ(p.sh)} / ${fmtQ(p.t)}</div></div>
+          </div>
+          <div class="inline-section">
+            <h4>发货时间轴</h4>
+            ${tl||`<div class="muted">暂无发货记录</div>`}
+          </div>
+          <div class="inline-actions">
+            <button class="btn-p btn-mini" data-action="ship" data-order-id="${esc(o.id)}" type="button">新增发货</button>
+            <button class="btn-s btn-mini" data-action="edit" data-order-id="${esc(o.id)}" type="button">编辑订单</button>
+            <button class="btn-d btn-mini" data-action="delete" data-order-id="${esc(o.id)}" type="button">删除订单</button>
+          </div>
+        </div>
+      `;
+    }
+    function OrderList(){const rows=st.orders.map(o=>{const p=progress(o),s=Api.deriveOrderStatus(o),expanded=!!st.expandedOrders[o.id];const main=`<tr><td>${esc(o.customer_name)}</td><td>${esc(o.contract_no)}</td><td><span class="tag ${tagCls(s)}">${tagText(s)}</span></td><td><div class="progress"><div class="bar"><span style="width:${p.p}%"></span></div><span class="muted">${fmtQ(p.sh)} / ${fmtQ(p.t)}</span></div></td><td class="center"><button class="btn-p btn-mini v-order" data-id="${esc(o.id)}">${expanded?"收起":"查看"}</button></td></tr>`;const detail=expanded?`<tr class="inline-detail-row"><td colspan="5">${InlineOrderDetail(o)}</td></tr>`:"";return main+detail;}).join(""); return `<div class="card"><div class="hd"><strong>订单列表</strong><button id="newOrderBtn" class="btn-p btn-mini" type="button">新建订单</button></div><div class="bd"><div class="wrap"><table><thead><tr><th>客户</th><th>合同号</th><th>状态</th><th>进度</th><th class="center">操作</th></tr></thead><tbody>${rows||`<tr><td colspan="5" class="center muted">暂无订单</td></tr>`}</tbody></table></div></div></div>`}
+    function OrderDetail(o){if(!o)return `<div class="card"><div class="bd muted">请选择订单</div></div>`; const s=Api.deriveOrderStatus(o),p=progress(o),map=shippedMap(o.id); const rows=(o.order_items||[]).map(i=>{const q=n(i.quantity),pr=n(i.unit_price),sh=Math.min(q,n(map[i.product_name])),rm=Math.max(0,q-sh);return `<tr><td>${esc(i.product_name)}</td><td class="right">${fmtQ(q)}</td><td class="right">${md(pr)}</td><td class="right">${md(q*pr)}</td><td class="right">${fmtQ(sh)}</td><td class="right">${fmtQ(rm)}</td></tr>`}).join(""); const tl=ships(o.id).map(s=>`<div class="timeline"><div><strong>${esc(s.shipped_at)}</strong> · 单号 ${esc(s.shipment_no)}</div><div class="muted" style="margin-top:4px">${(s.items||[]).map(i=>`<div>- ${esc(i.product_name)} × ${fmtQ(i.quantity_shipped)}</div>`).join("")||"无明细"}</div></div>`).join(""); return `<div class="detail"><div><div class="card"><div class="hd"><strong>订单信息</strong></div><div class="bd"><div class="sum"><div class="cell"><div class="k">客户</div><div class="v" style="font-size:16px">${esc(o.customer_name)}</div></div><div class="cell"><div class="k">合同号</div><div class="v" style="font-size:16px">${esc(o.contract_no)}</div></div><div class="cell"><div class="k">状态</div><div class="v" style="font-size:16px"><span class="tag ${tagCls(s)}">${tagText(s)}</span></div></div></div></div></div><div class="card"><div class="hd"><strong>产品明细</strong></div><div class="bd"><div class="wrap"><table><thead><tr><th>名称</th><th class="right">数量</th><th class="right">单价</th><th class="right">总价</th><th class="right">已发货</th><th class="right">未发货</th></tr></thead><tbody>${rows||`<tr><td colspan="6" class="center muted">暂无产品明细</td></tr>`}</tbody></table></div><div style="margin-top:12px"><div class="progress"><div class="bar" style="flex:1"><span style="width:${p.p}%"></span></div><strong>${p.p}%</strong></div><div class="muted" style="margin-top:4px">进度：${fmtQ(p.sh)} / ${fmtQ(p.t)}</div></div></div></div><div class="card"><div class="hd"><strong>发货时间轴</strong></div><div class="bd">${tl||`<div class="muted">暂无发货记录</div>`}</div></div></div><div class="sticky"><button id="newShipBtn" class="btn-p" type="button">新增发货</button><button id="editOrderBtn" class="btn-s" type="button">编辑订单</button><button id="delOrderBtn" class="btn-d" type="button">删除订单</button><button id="backBtn" class="btn-s" type="button">返回列表</button></div></div>`}
+    function renderCustomerRow(c, idx) {
+      const isEditing = (st.editingCustomerId === c.id);
+      if (isEditing) {
+        const form = st.customerEditFormData;
+        return `<tr data-customer-id="${esc(c.id)}"><td class="center">${idx+1}</td><td><input class="edit-input" data-field="customer_name" value="${esc(form.customer_name||"")}" /></td><td><input class="edit-input" data-field="contact_person" value="${esc(form.contact_person||"")}" /></td><td><input class="edit-input" data-field="phone" value="${esc(form.phone||"")}" /></td><td><input class="edit-input" data-field="email" value="${esc(form.email||"")}" /></td><td><input class="edit-input" data-field="address" value="${esc(form.address||"")}" /></td><td><input class="edit-input" data-field="tax_id" value="${esc(form.tax_id||"")}" /></td><td><textarea class="edit-textarea" data-field="remark" rows="1">${esc(form.remark||"")}</textarea></td><td class="center"><button class="btn-p btn-mini save-customer-edit" data-id="${esc(c.id)}">保存</button><button class="btn-s btn-mini cancel-customer-edit" data-id="${esc(c.id)}">取消</button></td></tr>`;
+      }
+      return `<tr><td class="center">${idx+1}</td><td>${esc(c.customer_name || c.name || '')}</td><td>${esc(c.contact_person || c.contact || '')}</td><td>${esc(c.phone || '')}</td><td>${esc(c.email || '')}</td><td>${esc(c.address || '')}</td><td>${esc(c.tax_id || '')}</td><td>${esc(c.remark || '').replace(/\n/g,'<br>')}</td><td class="center"><button class="btn-s btn-mini edit-customer" data-id="${esc(c.id)}">编辑</button><button class="btn-d btn-mini del-c" data-id="${esc(c.id)}">删除</button></td></tr>`;
+    }
+    function Customers() {
+      const rows = st.customers.map((c, idx) => renderCustomerRow(c, idx)).join('');
+      return `<div class="card"><div class="hd"><strong>客户管理</strong><button id="newCustomerBtn" class="btn-p btn-mini" type="button">新建客户</button></div><div class="bd"><div class="wrap"><table style="min-width:1000px"><thead><tr><th class="center">序号</th><th>客户名称</th><th>联系人</th><th>联系电话</th><th>电子邮箱</th><th>地址信息</th><th>税号/信用代码</th><th>备注</th><th class="center">操作</th></tr></thead><tbody id="customerTableBody">${rows||'<tr><td colspan="9" class="center muted">暂无客户</td></tr>'}</tbody></table></div></div></div>`;
+    }
+    function startEditCustomer(customer) {
+      st.editingCustomerId = customer.id;
+      st.customerEditFormData = { customer_name: customer.customer_name || customer.name || '', contact_person: customer.contact_person || '', phone: customer.phone || '', email: customer.email || '', address: customer.address || '', tax_id: customer.tax_id || '', remark: customer.remark || '' };
+      render();
+    }
+    function cancelEditCustomer() { st.editingCustomerId = null; st.customerEditFormData = {}; render(); }
+    async function saveEditCustomer(customerId) {
+      const form = st.customerEditFormData;
+      const editRow = document.querySelector(`tr[data-customer-id="${customerId}"]`);
+      if (editRow) editRow.querySelectorAll('[data-field]').forEach(inp => { const field = inp.getAttribute('data-field'); form[field] = inp.value; });
+      const original = st.customers.find(c => c.id === customerId);
+      if (!original) return;
+      const updated = { ...original, customer_name: form.customer_name, contact_person: form.contact_person, phone: form.phone, email: form.email, address: form.address, tax_id: form.tax_id, remark: form.remark, name: form.customer_name };
+      try {
+        await Api.createOrUpdateCustomer(updated);
+        await refreshCustomers();
+        st.editingCustomerId = null;
+        st.customerEditFormData = {};
+        render();
+      } catch (err) {
+        alert(`保存客户失败：\n${Api.formatSupabaseError(err)}`);
+      }
+    }
+    async function refreshCustomers() {
+      const c = await Api.getCustomers();
+      if (c && c.length) {
+        st.customers = c.map(Api.normalizeCustomer).map(cust => ({ ...cust, customer_name: cust.customer_name || cust.name, contact_person: cust.contact_person || cust.contact || '', phone: cust.phone || '', email: cust.email || '', address: cust.address || '', tax_id: cust.tax_id || '', remark: cust.remark || '', name: cust.customer_name || cust.name, contact: cust.contact_person || cust.contact || '' }));
+      } else {
+        const names = [...new Set(st.orders.map(x=>String(x.customer_name||"").trim()).filter(Boolean))];
+        st.customers = names.map(nm => Api.normalizeCustomer({name: nm, customer_name: nm}));
+      }
+    }
+    function buildRows(m){const rows=[];st.orders.forEach(o=>{const map={};(o.order_items||[]).forEach(i=>map[i.product_name]=i);(o.shipments||[]).forEach(s=>{if(!s.shipped_at||!s.shipped_at.startsWith(m))return;(s.items||[]).forEach(i=>{const q=n(i.quantity_shipped);if(q<=0)return;const p=map[i.product_name]||{};const u=n(p.unit_price);rows.push({shipped_at:s.shipped_at,shipment_no:s.shipment_no,contract_no:o.contract_no,product_name:i.product_name,product_spec:p.product_spec||"",quantity:q,unit_price:u,amount:q*u})})})});return rows.sort((a,b)=>a.shipped_at>b.shipped_at?1:-1)}
+    function upper(amount){const a=["零","壹","贰","叁","肆","伍","陆","柒","捌","玖"],r=["","拾","佰","仟"],u=["","万","亿","兆"],d=["角","分"];const m=n(amount);if(m===0)return"零元整";const [i,dc]=m.toFixed(2).split(".");let s="";if(parseInt(i,10)>0){let z=0;for(let x=0;x<i.length;x++){const nn=i.substring(x,x+1),p=i.length-x-1,q=Math.floor(p/4),mm=p%4;if(nn==="0"){z++}else{if(z>0)s+=a[0];z=0;s+=a[parseInt(nn,10)]+r[mm]}if(mm===0&&z<4)s+=u[q]}s+="元"}if(dc!=="00"){for(let x=0;x<dc.length;x++){const nn=dc.substring(x,x+1);if(nn!=="0")s+=a[parseInt(nn,10)]+d[x]}}else s+="整";return s}
+    function Statement(){const m=st.statementMonth||month(),rows=buildRows(m);st.statementRows=rows;const tq=rows.reduce((s,r)=>s+n(r.quantity),0),ta=rows.reduce((s,r)=>s+n(r.amount),0);const body=rows.map(r=>`<tr><td>${esc(r.shipped_at)}</td><td>${esc(r.shipment_no)}</td><td>${esc(r.contract_no)}</td><td>${esc(r.product_name)}</td><td>${esc(r.product_spec)}</td><td class="right">${fmtQ(r.quantity)}</td><td class="right">${md(r.unit_price)}</td><td class="right">${md(r.amount)}</td></tr>`).join(""); return `<div class="card"><div class="hd"><strong>对账中心</strong><div class="row" style="max-width:420px"><input id="monthInput" type="month" value="${m}"><button id="expBtn" class="btn-p btn-mini" type="button">导出Excel</button></div></div><div class="bd"><div class="wrap"><table><thead><tr><th>日期</th><th>送货单号</th><th>合同号</th><th>产品名称</th><th>规格</th><th class="right">数量</th><th class="right">单价</th><th class="right">金额（含税）</th></tr></thead><tbody>${body||`<tr><td colspan="8" class="center muted">该月份暂无数据</td></tr>`}</tbody></table></div><div class="sum" style="margin-top:10px"><div class="cell"><div class="k">本月总数量</div><div class="v">${fmtQ(tq)}</div></div><div class="cell"><div class="k">本月总金额</div><div class="v">¥${md(ta)}</div></div><div class="cell"><div class="k">人民币大写</div><div class="v" style="font-size:15px">${upper(ta)}</div></div></div></div></div>`}
+    function defaultPageByTab(tab){
+      if(tab==="customers") return "customers/list";
+      if(tab==="orders") return "orders/create";
+      if(tab==="ship") return "ship/list";
+      return "statement/list";
+    }
+    function goTo(tab,page,params={}){
+      st.appState = { tab, page: page || defaultPageByTab(tab), params: params || {} };
+      renderMobile();
+    }
+    function switchPage(tab){
+      st.appState = { tab, page: defaultPageByTab(tab), params: {} };
+      renderMobile();
+    }
+    function ensureMobileToast(){
+      let el = document.getElementById("mToast");
+      if(el) return el;
+      el = document.createElement("div");
+      el.id = "mToast";
+      el.style.cssText = "position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(31,45,61,.9);color:#fff;padding:8px 12px;border-radius:999px;font-size:12px;z-index:120;opacity:0;transition:.2s;pointer-events:none;";
+      document.body.appendChild(el);
+      return el;
+    }
+    function mToast(msg){
+      const el = ensureMobileToast();
+      el.textContent = msg;
+      el.style.opacity = "1";
+      clearTimeout(el._t);
+      el._t = setTimeout(()=>{el.style.opacity = "0";}, 1800);
+    }
+    async function withBtnLoading(btn, text, fn){
+      if(!btn) return fn();
+      const old = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = text;
+      try{return await fn();}finally{btn.disabled = false;btn.textContent = old;}
+    }
+    function mStats(){
+      const pending = st.orders.filter(o=>Api.deriveOrderStatus(o)==="pending").length;
+      const shipped = st.orders.filter(o=>Api.deriveOrderStatus(o)==="shipped").length;
+      const done = st.orders.filter(o=>Api.deriveOrderStatus(o)==="done").length;
+      return { pending, shipped, done };
+    }
+    function mobileBottomTabs(){
+      const tabs=[["customers","👥","客户"],["orders","🧾","新建订单"],["ship","📦","发货"],["statement","📊","对账"]];
+      return `<div class="mobile-bottom-wrap"><div class="mobile-bottom-nav">${tabs.map(([k,icon,label])=>`<button data-tab="${k}" class="mobile-tab-btn ${st.appState.tab===k?'active':''}"><span style="font-size:16px;line-height:1;">${icon}</span><span>${label}</span></button>`).join("")}</div></div>`;
+    }
+    function MobileHome(){ return MobileShip(); }
+    function MobileCustomers(){
+      const q = String(st.customerQuery||"").trim().toLowerCase();
+      const filtered = st.customers.filter(c=>{
+        if(!q) return true;
+        const nm = String(c.customer_name||c.name||"").toLowerCase();
+        const ph = String(c.phone||c.contact||"").toLowerCase();
+        return nm.includes(q) || ph.includes(q);
+      });
+      const list = filtered.map(c=>`<div class="mobile-card customer-card" data-customer-open="${esc(c.id)}">
+        <div class="customer-main">
+          <div class="customer-name">${esc(c.customer_name||c.name||"-")}</div>
+          <div class="customer-line">联系人：${esc(c.contact_person||c.contact||"—")}</div>
+          <div class="customer-line">电话：${esc(c.phone||c.contact||"—")}</div>
+        </div>
+        <div class="customer-actions">
+          <button data-customer-edit="${esc(c.id)}" class="customer-action-btn">编辑</button>
+          <button data-m-cdel="${esc(c.id)}" class="customer-action-btn delete">删除</button>
+        </div>
+      </div>`).join("");
+      const empty = `<div class="mobile-card" style="padding:24px 16px;text-align:center;">
+        <div style="font-size:36px;">📁</div>
+        <div style="font-weight:600;margin-top:6px;">暂无客户</div>
+        <div style="font-size:13px;color:#6b7a90;margin-top:4px;">还没有添加任何客户</div>
+        <div style="font-size:13px;color:#6b7a90;">点击下方按钮创建第一个客户</div>
+        <button id="newCustomerBtn" style="height:44px;padding:0 16px;border:none;border-radius:12px;background:#1677ff;color:#fff;margin-top:12px;">新建客户</button>
+      </div>`;
+      return `<div>
+        <input id="mCustomerSearch" class="mobile-search" placeholder="搜索客户名称 / 电话" value="${esc(st.customerQuery||"")}">
+        <div class="mobile-list">${list || empty}</div>
+        <div id="mobileCustomerDetailModal" class="modal"><div class="box" style="width:min(520px,92%)"><div class="mhd"><strong>客户详情</strong><button id="closeMobileCustomerDetail" class="btn-s btn-mini" type="button">关闭</button></div><div id="mobileCustomerDetailBody" class="mbd"></div></div></div>
+      </div>`;
+    }
+    function mobileOrderTotal(items){
+      return items.reduce((s,i)=>s + n(i.quantity) * n(i.unit_price), 0);
+    }
+    function renderMobileOrderProductRows(items){
+      const list = (Array.isArray(items) && items.length) ? items : [{product_name:"",product_spec:"",quantity:"",unit_price:""}];
+      return list.map((it,idx)=>{
+        const qty = n(it.quantity);
+        const price = n(it.unit_price);
+        const subtotal = qty * price;
+        const canDel = list.length > 1;
+        return `<div class="mobile-order-item" data-mo-row="${idx}">
+          <div class="mobile-order-item-grid">
+            <div class="mobile-order-field">
+              <label>产品名称</label>
+              <input data-mi-name="${idx}" value="${esc(it.product_name||"")}" placeholder="产品名称">
+            </div>
+            <div class="mobile-order-field">
+              <label>规格</label>
+              <input data-mi-spec="${idx}" value="${esc(it.product_spec||"")}" placeholder="规格">
+            </div>
+            <div class="mobile-order-two-cols">
+              <div class="mobile-order-field">
+                <label>数量</label>
+                <input data-mi-qty="${idx}" type="number" min="0" step="0.01" value="${esc(it.quantity??"")}" placeholder="数量">
+              </div>
+              <div class="mobile-order-field">
+                <label>单价</label>
+                <input data-mi-price="${idx}" type="number" min="0" step="0.0001" value="${esc(it.unit_price??"")}" placeholder="单价">
+              </div>
+            </div>
+            <div class="mobile-order-item-footer">
+              <div class="mobile-order-subtotal">小计：<span data-mo-subtotal="${idx}">¥${md(subtotal)}</span></div>
+              ${canDel?`<button class="mobile-order-danger-btn" type="button" data-mi-del="${idx}">删除</button>`:`<span class="muted">—</span>`}
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+    function updateMobileOrderTotal(){
+      const d = st.createDraft;
+      const total = mobileOrderTotal(d.items||[]);
+      const totalEl = document.getElementById("mOrderTotal");
+      if(totalEl) totalEl.textContent = `¥${md(total)}`;
+      const list = document.getElementById("mOrderItems");
+      if(list){
+        (d.items||[]).forEach((it,idx)=>{
+          const subEl = list.querySelector(`[data-mo-subtotal="${idx}"]`);
+          if(!subEl) return;
+          const sub = n(it.quantity) * n(it.unit_price);
+          subEl.textContent = `¥${md(sub)}`;
+        });
+      }
+    }
+    function addMobileProductRow(){
+      st.createDraft.items = Array.isArray(st.createDraft.items) ? st.createDraft.items : [];
+      st.createDraft.items.push({product_name:"",product_spec:"",quantity:"",unit_price:""});
+      renderMobile();
+      updateMobileOrderTotal();
+    }
+    function removeMobileProductRow(idx){
+      const i = n(idx);
+      if(!Array.isArray(st.createDraft.items)) st.createDraft.items = [];
+      st.createDraft.items.splice(i,1);
+      if(!st.createDraft.items.length) st.createDraft.items = [{product_name:"",product_spec:"",quantity:"",unit_price:""}];
+      renderMobile();
+      updateMobileOrderTotal();
+    }
+    function MobileOrder(){
+      const d = st.createDraft;
+      const total = mobileOrderTotal(d.items||[]);
+      return `<div class="mobile-order-form">
+        <div class="mobile-card mobile-order-card">
+          <div class="mobile-order-label">客户 *</div>
+          <select id="mOrderCustomer" class="mobile-order-input">
+            <option value="">请选择客户</option>
+            ${st.customers.map(c=>`<option value="${esc(c.id)}" ${d.customerId===c.id?'selected':''}>${esc(c.name||c.customer_name)}</option>`).join("")}
+          </select>
+          <div class="mobile-order-label" style="margin-top:10px">合同号 *</div>
+          <input id="mOrderContract" class="mobile-order-input" value="${esc(d.contractNo||"")}" placeholder="请输入合同号">
+        </div>
+
+        <div class="mobile-order-section-title">产品明细</div>
+        <div id="mOrderItems" class="mobile-order-items">${renderMobileOrderProductRows(d.items||[])}</div>
+        <button id="mOrderAddRow" class="mobile-order-dash-btn" type="button">+ 添加产品</button>
+
+        <div class="mobile-card mobile-order-card" style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="mobile-order-label" style="margin:0">总金额</div>
+          <div id="mOrderTotal" class="mobile-order-money">¥${md(total)}</div>
+        </div>
+
+        <button id="mSubmitOrder" class="mobile-order-submit-btn" type="button">提交订单</button>
+      </div>`;
+    }
+    function mobileShipExpand(order){
+      const map = shippedMap(order.id);
+      const rows = (order.order_items||[]).map((it,idx)=>{
+        const ordered = n(it.quantity);
+        const shipped = Math.min(ordered, n(map[it.product_name]));
+        const remain = Math.max(0, ordered - shipped);
+        const val = st.shipDraft.items[idx]?.quantity_shipped || "";
+        return `<div class="mobile-ship-item">
+          <div class="mobile-ship-item-title">
+            <strong>${esc(it.product_name)}</strong>
+            <span style="font-size:12px;color:#8e9aaf;">规格 ${esc(it.product_spec||"-")}</span>
+          </div>
+          <div class="mobile-ship-item-meta">订单 ${fmtQ(ordered)} · 已发 ${fmtQ(shipped)} · 剩余 ${fmtQ(remain)}</div>
+          <div style="margin-top:8px">
+            <input class="mobile-ship-input" data-si-qty="${idx}" type="number" min="0" step="0.01" max="${remain}" value="${esc(val)}" placeholder="本次发货数量（最大 ${fmtQ(remain)}）">
+          </div>
+        </div>`;
+      }).join("");
+      return `<div class="mobile-ship-detail">
+        <div class="mobile-ship-detail-inner">
+          <div class="mobile-ship-products">${rows}</div>
+          <div class="mobile-ship-info-row">
+            <input class="mobile-ship-input" id="shipNoPage-${esc(order.id)}" value="${esc(st.shipDraft.shipment_no||"")}" placeholder="发货单号">
+            <input class="mobile-ship-input" id="shipDatePage-${esc(order.id)}" type="date" value="${esc(st.shipDraft.shipped_at||today())}">
+          </div>
+          <button class="mobile-order-submit-btn" data-ship-save="${esc(order.id)}" type="button">提交发货</button>
+        </div>
+      </div>`;
+    }
+    function MobileShip(){
+      const stats = mStats();
+      const rows = st.orders.map(o=>{
+        const s = Api.deriveOrderStatus(o);
+        const expanded = st.shipDraft.orderId === o.id;
+        return `<div class="mobile-ship-card">
+          <button class="mobile-ship-header" data-ship-open="${esc(o.id)}" type="button">
+            <div>
+              <div style="font-weight:700;">${esc(o.customer_name||"-")}</div>
+              <div style="font-size:12px;color:#6b7a90;">合同号：${esc(o.contract_no||"-")}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="tag ${tagCls(s)}">${tagText(s)}</span>
+              <span style="color:#8e9aaf;">${expanded ? "▾" : "▸"}</span>
+            </div>
+          </button>
+          ${expanded ? mobileShipExpand(o) : ""}
+        </div>`;
+      }).join("");
+      return `<div style="display:grid;gap:10px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div class="mobile-card" style="padding:10px;"><div style="font-size:12px;color:#6b7a90;">待发货</div><div style="font-weight:700;font-size:18px;">${stats.pending}</div></div>
+          <div class="mobile-card" style="padding:10px;"><div style="font-size:12px;color:#6b7a90;">部分发货</div><div style="font-weight:700;font-size:18px;">${stats.shipped}</div></div>
+          <div class="mobile-card" style="padding:10px;"><div style="font-size:12px;color:#6b7a90;">已完成</div><div style="font-weight:700;font-size:18px;">${stats.done}</div></div>
+        </div>
+        <div style="display:grid;gap:8px;">${rows || `<div class="mobile-card" style="padding:18px;text-align:center;color:#8e9aaf;">暂无订单</div>`}</div>
+      </div>`;
+    }
+    function MobileStatement(){
+      const m = st.statementMonth || month();
+      const rows = buildRows(m);
+      const totalQty = rows.reduce((s,r)=>s+n(r.quantity),0);
+      const totalAmt = rows.reduce((s,r)=>s+n(r.amount),0);
+      const list = rows.map(r=>`<div class="mobile-card" style="padding:10px;display:grid;gap:4px;">
+        <div style="display:flex;justify-content:space-between;gap:8px;"><strong>${esc(r.product_name)}</strong><span style="font-weight:700;color:#d4380d;">¥${md(r.amount)}</span></div>
+        <div style="font-size:12px;color:#6b7a90;">${esc(r.shipped_at)} · 单号 ${esc(r.shipment_no)}</div>
+        <div style="font-size:12px;color:#6b7a90;">合同 ${esc(r.contract_no)} · 数量 ${fmtQ(r.quantity)}</div>
+      </div>`).join("");
+      return `<div style="display:grid;gap:10px;">
+        <div class="mobile-card" style="padding:10px;display:grid;gap:8px;">
+          <input id="monthInput" type="month" value="${esc(m)}" style="height:44px;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="border:1px solid #eef2f7;border-radius:12px;padding:10px;"><div style="font-size:12px;color:#6b7a90;">总数量</div><div style="font-size:20px;font-weight:700;">${fmtQ(totalQty)}</div></div>
+            <div style="border:1px solid #eef2f7;border-radius:12px;padding:10px;"><div style="font-size:12px;color:#6b7a90;">总金额</div><div style="font-size:20px;font-weight:700;">¥${md(totalAmt)}</div></div>
+          </div>
+        </div>
+        <div style="display:grid;gap:8px;">${list || `<div class="mobile-card" style="padding:18px;text-align:center;color:#8e9aaf;">该月份暂无数据</div>`}</div>
+      </div>`;
+    }
+    function openMobileCustomerDetail(customerId){
+      const c = st.customers.find(x=>x.id===customerId);
+      if(!c) return;
+      const modal = document.getElementById("mobileCustomerDetailModal");
+      const body = document.getElementById("mobileCustomerDetailBody");
+      if(!modal || !body) return;
+      const fields = [
+        ["客户名称", c.customer_name || c.name || "-"],
+        ["联系人", c.contact_person || "-"],
+        ["电话", c.phone || c.contact || "-"],
+        ["邮箱", c.email || "-"],
+        ["地址", c.address || "-"],
+        ["税号", c.tax_id || "-"],
+        ["备注", c.remark || "-"]
+      ];
+      body.innerHTML = fields.map(([k,v])=>`<div style="padding:8px 0;border-bottom:1px solid #eef2f7;"><div style="font-size:12px;color:#6b7a90;">${k}</div><div style="margin-top:2px;">${esc(v)}</div></div>`).join("");
+      modal.classList.add("show");
+    }
+    function startMobileEditCustomer(customerId){
+      const c = st.customers.find(x=>x.id===customerId);
+      if(!c) return;
+      E.customerName.value = c.customer_name || c.name || "";
+      E.customerContactPerson.value = c.contact_person || "";
+      E.customerPhone.value = c.phone || "";
+      E.customerEmail.value = c.email || "";
+      E.customerAddress.value = c.address || "";
+      E.customerTaxId.value = c.tax_id || "";
+      E.customerRemark.value = c.remark || "";
+      st.editingCustomerId = c.id;
+      E.customerModal.classList.add("show");
+    }
+    async function submitMobileOrder(btn){
+      const d = st.createDraft;
+      const customer = st.customers.find(c=>c.id===d.customerId);
+      const no = String(d.contractNo||"").trim();
+      const it = (d.items||[]).map(i=>({
+        product_name:String(i.product_name||"").trim(),
+        product_spec:String(i.product_spec||"").trim(),
+        quantity:n(i.quantity),
+        unit_price:n(i.unit_price)
+      })).filter(i=>i.product_name && i.quantity>0 && i.unit_price>=0);
+      if(!customer){ mToast("请选择客户"); return; }
+      if(!no){ mToast("请填写合同号"); return; }
+      if(!it.length){ mToast("请至少填写一个有效产品"); return; }
+      const payload = Api.normalizeOrder({customer_name:customer.name,customer_cloud_id:customer.cloud_id,contract_no:no,created_at:new Date().toISOString(),status:"pending",order_items:it,shipments:[]});
+      await withBtnLoading(btn,"提交中...",async()=>{
+        try{
+          await Api.createOrUpdateCustomer(customer);
+          await Api.createOrder(payload,st.customers);
+          st.createDraft={customerId:"",contractNo:"",items:[{product_name:"",product_spec:"",quantity:"",unit_price:""}]};
+          await refresh();
+          goTo("ship","ship/list",{});
+          mToast("订单已创建");
+        }catch(err){
+          alert(`订单保存失败：\n${Api.formatSupabaseError(err)}`);
+        }
+      });
+    }
+    async function saveShipFromPage(orderId,btn){
+      const o = ord(orderId);
+      if(!o) return;
+      const shipNo = (document.getElementById(`shipNoPage-${orderId}`)?.value||"").trim();
+      const shipDate = (document.getElementById(`shipDatePage-${orderId}`)?.value||"").trim();
+      if(!shipNo){ mToast("请填写发货单号"); return; }
+      if(!shipDate){ mToast("请选择发货日期"); return; }
+      const map = shippedMap(o.id);
+      const shipItems = (o.order_items||[]).map((it,idx)=>({product_name:it.product_name,quantity_shipped:n(st.shipDraft.items[idx]?.quantity_shipped)})).filter(i=>i.quantity_shipped>0);
+      if(!shipItems.length){ mToast("请至少填写一项发货数量"); return; }
+      for(const item of shipItems){
+        const oi = (o.order_items||[]).find(x=>x.product_name===item.product_name);
+        const remain = Math.max(0,n(oi?.quantity)-Math.min(n(oi?.quantity),n(map[item.product_name])));
+        if(item.quantity_shipped>remain){ mToast(`${item.product_name} 超出剩余数量`); return; }
+      }
+      const ship = { shipment_id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), shipment_no:shipNo, shipped_at:shipDate, items:shipItems };
+      await withBtnLoading(btn,"提交中...",async()=>{
+        try{
+          await Api.createShipment(o,ship,st.customers);
+          await refresh();
+          st.shipDraft={orderId:"",shipped_at:"",shipment_no:"",items:[{product_name:"", quantity_shipped:""}]};
+          mToast("发货成功");
+        }catch(err){
+          alert(`发货保存失败：\n${Api.formatSupabaseError(err)}`);
+        }
+      });
+    }
+    function renderDesktop(){document.body.classList.remove("mobile-mode");const t={orders:"订单管理",customers:"客户管理",statement:"对账中心"};E.title.textContent=t[st.view];E.menus.forEach(b=>b.classList.toggle("active",b.dataset.v===st.view));E.ordersView.classList.toggle("hidden",st.view!=="orders");E.customersView.classList.toggle("hidden",st.view!=="customers");E.statementView.classList.toggle("hidden",st.view!=="statement"); if(st.view==="orders"){const desktopDetail=st.appState.page==="orders/detail"&&st.selected;E.ordersView.innerHTML=desktopDetail?OrderDetail(ord(st.selected)):OrderList();}else if(st.view==="customers"){E.customersView.innerHTML=Customers();}else{E.statementView.innerHTML=Statement();}}
+    function renderMobileContent(){
+      const host = document.getElementById("mobileContent");
+      if(!host) return;
+      let html = "";
+      const page = st.appState.page;
+      if(page==="customers/list") html = MobileCustomers();
+      else if(page==="orders/create") html = MobileOrder();
+      else if(page==="ship/list") html = MobileShip();
+      else if(page==="statement/list") html = MobileStatement();
+      else html = MobileShip();
+      host.innerHTML = html;
+    }
+    function renderMobile(){
+      document.body.classList.add("mobile-mode");
+      E.menus.forEach(b=>b.classList.remove("active"));
+      E.ordersView.classList.remove("hidden");
+      E.customersView.classList.add("hidden");
+      E.statementView.classList.add("hidden");
+      const title = ({orders:"新建订单",customers:"客户管理",ship:"发货看板",statement:"对账中心"})[st.appState.tab] || "订单系统";
+      const userText = (E.u?.textContent || "").replace(/^已登录：/,"").trim();
+      const shellExists = !!E.ordersView.querySelector(".mobile-container #mobileContent");
+      if(!shellExists){
+        E.ordersView.innerHTML = `<div class="mobile-container">
+          <div class="mobile-header">
+            <div class="mobile-header-inner">
+              <div class="mobile-header-title" id="mobileHeaderTitle">${esc(title)}</div>
+              <div class="mobile-header-user" title="${esc(userText)}">${esc(userText || "")}</div>
+            </div>
+          </div>
+          <div id="mobileContent"></div>
+          ${mobileBottomTabs()}
+        </div>`;
+      }else{
+        const tEl = document.getElementById("mobileHeaderTitle");
+        if(tEl) tEl.textContent = title;
+        const uEl = E.ordersView.querySelector(".mobile-header-user");
+        if(uEl){ uEl.textContent = userText || ""; uEl.setAttribute("title", userText || ""); }
+        const navHost = E.ordersView.querySelector(".mobile-bottom-wrap");
+        if(navHost) navHost.outerHTML = mobileBottomTabs();
+      }
+      renderMobileContent();
+    }
+    function render(){if(isMobile())return renderMobile();return renderDesktop();}
+    async function refresh(){const o=await Api.getOrders();st.orders=(o||[]).map(Api.normalizeOrder);await refreshCustomers();if(!st.orders.find(x=>x.id===st.selected))st.selected=st.orders.length?st.orders[st.orders.length-1].id:"";const alive={};st.orders.forEach(or=>{if(st.expandedOrders[or.id])alive[or.id]=true});st.expandedOrders=alive;render()}
+    async function saveOrder(ev){ev.preventDefault();const cid=E.orderCustomer.value,customer=st.customers.find(c=>c.id===cid),no=E.orderNo.value.trim(),it=collectItems();if(!customer||!no){alert("请选择客户并填写合同号。");return}if(!it.length){alert("请至少填写一条产品明细。");return}const base=st.editing?ord(st.editing):null;const payload=Api.normalizeOrder({...base,id:base?.id||"",customer_name:customer.name,customer_cloud_id:customer.cloud_id,contract_no:no,created_at:base?.created_at||new Date().toISOString(),status:base?.status||"pending",order_items:it,shipments:base?.shipments||[]}); try{await Api.createOrUpdateCustomer(customer);await Api.createOrder(payload,st.customers);closeOrderModal(false);await refresh();const latest=[...st.orders].reverse().find(o=>o.contract_no===no)||st.orders[st.orders.length-1];restoreReturnState(latest?{keepOrderId:latest.id}:{}) ;render()}catch(err){alert(`订单保存失败：\n${Api.formatSupabaseError(err)}`)}}
+    async function saveCustomer(ev){
+      ev.preventDefault();
+      const name=E.customerName.value.trim();
+      if(!name){mToast("请输入客户名称");return}
+      const base = st.editingCustomerId ? st.customers.find(c=>c.id===st.editingCustomerId) : null;
+      const payload={
+        ...(base||{}),
+        customer_name:name,
+        contact_person:E.customerContactPerson.value.trim(),
+        phone:E.customerPhone.value.trim(),
+        email:E.customerEmail.value.trim(),
+        address:E.customerAddress.value.trim(),
+        tax_id:E.customerTaxId.value.trim(),
+        remark:E.customerRemark.value.trim(),
+        name:name
+      };
+      try{
+        await Api.createOrUpdateCustomer(payload);
+        st.editingCustomerId = null;
+        closeCustomerModal(false);
+        await refresh();
+        restoreReturnState();
+        render();
+        mToast("客户已保存");
+      }catch(err){
+        alert(`客户保存失败：\n${Api.formatSupabaseError(err)}`);
+      }
+    }
+    async function saveShip(){const o=ord(st.shipOrder);if(!o)return;const dt=E.shipDate.value,no=E.shipNo.value.trim();if(!dt||!no){alert("请填写发货日期和送货单号。");return}const rows=[...E.shipItems.querySelectorAll(".js-sr")].map(r=>({product_name:(r.querySelector(".s-name")?.value||"").trim(),quantity_shipped:n(r.querySelector(".s-qty")?.value)})).filter(r=>r.product_name&&r.quantity_shipped>0);if(!rows.length){alert("请至少填写一条发货明细。");return}const map=shippedMap(o.id),ordMap={};(o.order_items||[]).forEach(i=>ordMap[i.product_name]=n(i.quantity));const add={};rows.forEach(r=>add[r.product_name]=n(add[r.product_name])+n(r.quantity_shipped));for(const name of Object.keys(add)){if(!(name in ordMap)){alert(`产品 ${name} 不在订单明细中。`);return}const rem=Math.max(0,ordMap[name]-Math.min(ordMap[name],n(map[name])));if(add[name]>rem){alert(`${name} 发货数量不能超过剩余 ${fmtQ(rem)}。`);return}}const ship={shipment_id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),shipment_no:no,shipped_at:dt,items:rows};try{await Api.createShipment(o,ship,st.customers);closeShipModal(false);await refresh();restoreReturnState({keepOrderId:o.id});render()}catch(err){alert(`发货保存失败：\n${Api.formatSupabaseError(err)}`)}}
+    function exportX(){if(!st.statementRows.length){alert("当前月份没有可导出的数据。");return}if(typeof XLSX==="undefined"){alert("导出组件加载失败，请刷新后重试。");return}const h=["日期","送货单号","合同号","产品名称","规格","数量","单价","金额（含税）"];const rows=st.statementRows.map(r=>[r.shipped_at,r.shipment_no,r.contract_no,r.product_name,r.product_spec,fmtQ(r.quantity),fmtM(r.unit_price),fmtM(r.amount)]);const ws=XLSX.utils.aoa_to_sheet([h,...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"对账单");XLSX.writeFile(wb,`对账单_${st.statementMonth||month()}.xlsx`)}
+    function bind(){
+      E.menus.forEach(b=>b.addEventListener("click",()=>{st.view=b.dataset.v;if(st.view==="orders"){st.appState={tab:"orders",page:"orders/create",params:{}};}render()}));
+      E.login.addEventListener("click",async()=>{const em=E.email.value.trim(),pw=E.pwd.value.trim();if(!em||!pw)return setMsg("请输入邮箱和密码。",true);const {error}=await Api.login(em,pw);if(error)return setMsg(`登录失败：${error.message||"unknown"}`,true);setMsg("登录成功。")});
+      E.reg.addEventListener("click",async()=>{const em=E.email.value.trim(),pw=E.pwd.value.trim();if(!em||!pw)return setMsg("请输入邮箱和密码。",true);const {error}=await Api.register(em,pw);if(error)return setMsg(`注册失败：${error.message||"unknown"}`,true);setMsg("注册成功，请登录。")});
+      E.logout.addEventListener("click",async()=>{const {error}=await Api.logout();if(error)alert(`退出失败：${error.message||"unknown"}`)});
+      E.closeOrderModal.addEventListener("click",closeOrderModal);E.cancelOrder.addEventListener("click",closeOrderModal);
+      E.orderForm.addEventListener("submit",saveOrder);E.addItem.addEventListener("click",addItemRow);E.itemsEditor.addEventListener("input",calcItemTotals);E.itemsEditor.addEventListener("click",e=>{const b=e.target.closest(".rm-item");if(!b)return;b.closest("tr")?.remove();if(!E.itemsEditor.querySelector("#itb tr"))addItemRow();calcItemTotals()});
+      E.closeCustomerModal.addEventListener("click",closeCustomerModal);E.cancelCustomer.addEventListener("click",closeCustomerModal);E.customerForm.addEventListener("submit",saveCustomer);
+      E.closeShipModal.addEventListener("click",closeShipModal);E.cancelShip.addEventListener("click",closeShipModal);E.shipModal.addEventListener("click",e=>{const rb=e.target.closest(".rm-sr");if(!rb)return;rb.closest(".js-sr")?.remove();if(!E.shipItems.querySelector(".js-sr")&&st.shipOrder)E.shipItems.insertAdjacentHTML("beforeend",shipRow(st.shipOrder))});E.addShipItem.addEventListener("click",()=>{if(!st.shipOrder)return;E.shipItems.insertAdjacentHTML("beforeend",shipRow(st.shipOrder))});E.saveShip.addEventListener("click",saveShip);
+      document.addEventListener("keydown",e=>{
+        if(e.key!=="Escape")return;
+        if(E.shipModal.classList.contains("show")){closeShipModal();return}
+        if(E.customerModal.classList.contains("show")){closeCustomerModal();return}
+        if(E.orderModal.classList.contains("show")){closeOrderModal();return}
+      });
+      document.body.addEventListener("click",async e=>{
+        const tabBtn=e.target.closest("[data-tab]");
+        if(tabBtn){const tab=tabBtn.getAttribute("data-tab");switchPage(tab);return}
+
+        if(e.target.id==="newCustomerBtn"){st.editingCustomerId=null;E.customerForm.reset();openCustomerModal();return}
+        if(e.target.id==="mobileLogoutBtn"){const {error}=await Api.logout();if(error)alert(`退出失败：${error.message||"unknown"}`);return}
+        if(e.target.id==="closeMobileCustomerDetail" || e.target.id==="mobileCustomerDetailModal"){document.getElementById("mobileCustomerDetailModal")?.classList.remove("show");return}
+
+        const openCustomer=e.target.closest("[data-customer-open]");
+        if(openCustomer && !e.target.closest("[data-customer-edit]") && !e.target.closest("[data-m-cdel]")){
+          openMobileCustomerDetail(openCustomer.getAttribute("data-customer-open"));
+          return;
+        }
+        const editCustomer=e.target.closest("[data-customer-edit]");
+        if(editCustomer){startMobileEditCustomer(editCustomer.getAttribute("data-customer-edit"));return}
+        const delCustomer=e.target.closest("[data-m-cdel]");
+        if(delCustomer){
+          const id=delCustomer.getAttribute("data-m-cdel"),c=st.customers.find(x=>x.id===id);
+          if(!c)return;
+          const cname=c.customer_name||c.name||"";
+          const used=st.orders.some(o=>String(o.customer_name||"").trim()===String(cname).trim());
+          if(used){mToast("该客户已被订单引用，不能删除");return}
+          if(!confirm(`确认删除客户 ${cname} 吗？`))return;
+          await withBtnLoading(delCustomer,"删除中...",async()=>{
+            try{await Api.deleteCustomer(c.cloud_id);await refresh();mToast("客户已删除");}catch(err){alert(`删除客户失败：\n${Api.formatSupabaseError(err)}`)}
+          });
+          return;
+        }
+
+        if(e.target.id==="mOrderAddRow"){addMobileProductRow();return}
+        const delItemBtn=e.target.closest("[data-mi-del]");
+        if(delItemBtn){
+          removeMobileProductRow(delItemBtn.getAttribute("data-mi-del"));
+          return;
+        }
+        if(e.target.id==="mSubmitOrder"){
+          st.createDraft.customerId=(document.getElementById("mOrderCustomer")?.value||"").trim();
+          st.createDraft.contractNo=(document.getElementById("mOrderContract")?.value||"").trim();
+          await submitMobileOrder(e.target);
+          return;
+        }
+
+        const shipOpen=e.target.closest("[data-ship-open]");
+        if(shipOpen){
+          const id=shipOpen.getAttribute("data-ship-open");
+          const o=ord(id);
+          if(!o)return;
+          if(st.shipDraft.orderId===id){st.shipDraft={orderId:"",shipped_at:"",shipment_no:"",items:[{product_name:"", quantity_shipped:""}]};renderMobile();return;}
+          st.shipDraft={orderId:id,shipped_at:today(),shipment_no:"",items:(o.order_items||[]).map(it=>({product_name:it.product_name,quantity_shipped:""}))};
+          renderMobile();
+          return;
+        }
+        const shipSave=e.target.closest("[data-ship-save]");
+        if(shipSave){const id=shipSave.getAttribute("data-ship-save");await saveShipFromPage(id, shipSave);return}
+        const editBtn = e.target.closest('.edit-customer');
+        if (editBtn) {
+          const id = editBtn.getAttribute('data-id');
+          const customer = st.customers.find(c => c.id === id);
+          if (customer) startEditCustomer(customer);
+          return;
+        }
+        const saveEditBtn = e.target.closest('.save-customer-edit');
+        if (saveEditBtn) {
+          const id = saveEditBtn.getAttribute('data-id');
+          await saveEditCustomer(id);
+          return;
+        }
+        const cancelEditBtn = e.target.closest('.cancel-customer-edit');
+        if (cancelEditBtn) {
+          cancelEditCustomer();
+          return;
+        }
+        if (e.target.closest('[data-field]') && st.editingCustomerId) {
+          const input = e.target.closest('[data-field]');
+          if (input) {
+            const field = input.getAttribute('data-field');
+            const value = input.value;
+            if (st.customerEditFormData[field] !== undefined) st.customerEditFormData[field] = value;
+          }
+        }
+        const vb=e.target.closest(".v-order"); if(vb){const id=vb.dataset.id;st.selected=id;st.expandedOrders[id]=!st.expandedOrders[id];render();return}
+        if(e.target.id==="newOrderBtn"){openOrderModal(null);return}
+        if(e.target.id==="newCustomerBtn"){openCustomerModal();return}
+        if(e.target.id==="backBtn"){st.appState={tab:"orders",page:"orders/list",params:{}};render();return}
+        if(e.target.id==="editOrderBtn"){const o=ord(st.selected);if(o)openOrderModal(o);return}
+        if(e.target.id==="newShipBtn"){if(!st.selected)return;openShipModal(st.selected);return}
+        if(e.target.id==="delOrderBtn"){const o=ord(st.selected);if(!o)return;if(!confirm(`确认删除订单 ${o.contract_no} 吗？`))return;try{await Api.deleteOrder(o.contract_no);st.selected="";st.appState={tab:"orders",page:"orders/list",params:{}};await refresh()}catch(err){alert(`删除订单失败：\n${Api.formatSupabaseError(err)}`)}return}
+        const actionBtn=e.target.closest("[data-action][data-order-id]");
+        if(actionBtn){
+          const action=actionBtn.getAttribute("data-action"),id=actionBtn.getAttribute("data-order-id"),o=ord(id);
+          if(!o)return;
+          st.selected=id;
+          if(action==="edit"){openOrderModal(o);return}
+          if(action==="ship"){openShipModal(id);return}
+          if(action==="delete"){
+            if(!confirm(`确认删除订单 ${o.contract_no} 吗？`))return;
+            try{await Api.deleteOrder(o.contract_no);delete st.expandedOrders[id];if(st.selected===id)st.selected="";st.appState={tab:"orders",page:"orders/list",params:{}};await refresh()}catch(err){alert(`删除订单失败：\n${Api.formatSupabaseError(err)}`)}
+            return;
+          }
+        }
+        const dc=e.target.closest(".del-c"); if(dc){const id=dc.dataset.id,c=st.customers.find(x=>x.id===id);if(!c)return;const cname=c.customer_name||c.name||"";const used=st.orders.some(o=>String(o.customer_name||"").trim()===String(cname).trim());if(used){alert("该客户已被订单引用，不能删除。");return}if(!confirm(`确认删除客户 ${cname} 吗？`))return;try{await Api.deleteCustomer(c.cloud_id);await refresh()}catch(err){alert(`删除客户失败：\n${Api.formatSupabaseError(err)}`)}return}
+        if(e.target.id==="expBtn")exportX();
+      });
+      document.body.addEventListener("input",e=>{
+        if(e.target.id==="mCustomerSearch"){st.customerQuery=e.target.value||"";if(isMobile()&&st.appState.tab==="customers")renderMobile();return}
+        if(isMobile() && st.appState.tab==="orders"){
+          const nameIdx=e.target?.getAttribute?.("data-mi-name");
+          const specIdx=e.target?.getAttribute?.("data-mi-spec");
+          const qtyIdx=e.target?.getAttribute?.("data-mi-qty");
+          const priceIdx=e.target?.getAttribute?.("data-mi-price");
+          if(nameIdx!==null && nameIdx!==undefined){
+            st.createDraft.items[n(nameIdx)]={...st.createDraft.items[n(nameIdx)],product_name:e.target.value};
+            updateMobileOrderTotal();
+            return;
+          }
+          if(specIdx!==null && specIdx!==undefined){
+            st.createDraft.items[n(specIdx)]={...st.createDraft.items[n(specIdx)],product_spec:e.target.value};
+            updateMobileOrderTotal();
+            return;
+          }
+          if(qtyIdx!==null && qtyIdx!==undefined){
+            st.createDraft.items[n(qtyIdx)]={...st.createDraft.items[n(qtyIdx)],quantity:e.target.value};
+            updateMobileOrderTotal();
+            return;
+          }
+          if(priceIdx!==null && priceIdx!==undefined){
+            st.createDraft.items[n(priceIdx)]={...st.createDraft.items[n(priceIdx)],unit_price:e.target.value};
+            updateMobileOrderTotal();
+            return;
+          }
+        }
+        const input=e.target.closest("[data-field]");
+        if(!input||!st.editingCustomerId)return;
+        const field=input.getAttribute("data-field");
+        if(field && st.customerEditFormData[field]!==undefined)st.customerEditFormData[field]=input.value;
+      });
+      document.body.addEventListener("change",e=>{
+        if(e.target.id==="monthInput"){st.statementMonth=e.target.value||month();render();return}
+        const nameIdx=e.target.getAttribute("data-mi-name"),specIdx=e.target.getAttribute("data-mi-spec"),qtyIdx=e.target.getAttribute("data-mi-qty"),priceIdx=e.target.getAttribute("data-mi-price"),shipIdx=e.target.getAttribute("data-si-qty");
+        if(nameIdx!==null){st.createDraft.items[n(nameIdx)]={...st.createDraft.items[n(nameIdx)],product_name:e.target.value};updateMobileOrderTotal();return}
+        if(specIdx!==null){st.createDraft.items[n(specIdx)]={...st.createDraft.items[n(specIdx)],product_spec:e.target.value};updateMobileOrderTotal();return}
+        if(qtyIdx!==null){st.createDraft.items[n(qtyIdx)]={...st.createDraft.items[n(qtyIdx)],quantity:e.target.value};updateMobileOrderTotal();return}
+        if(priceIdx!==null){st.createDraft.items[n(priceIdx)]={...st.createDraft.items[n(priceIdx)],unit_price:e.target.value};updateMobileOrderTotal();return}
+        if(shipIdx!==null){st.shipDraft.items[n(shipIdx)]={...st.shipDraft.items[n(shipIdx)],quantity_shipped:e.target.value};return}
+      });
+      window.addEventListener("resize",()=>render());
+    }
+    async function initForSession(sess){toggleAuth(sess);if(!sess)return;try{await Api.checkConnection()}catch(err){alert(`Supabase 连接失败：\n${Api.formatSupabaseError(err)}`)}await refresh()}
+    async function init(){bind();st.statementMonth=month();const sess=await Api.getSession();await initForSession(sess);Api.onAuthStateChange(async s=>{toggleAuth(s);if(s)await refresh()});Api.subscribeCloudChanges(async()=>{if(E.app.classList.contains("hidden"))return;await refresh()})}
+    init();
+  </script>
+</body>
+</html>
